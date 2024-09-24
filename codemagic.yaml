@@ -53,8 +53,6 @@ workflows:
     instance_type: mac_mini_m2
     working_directory: ios/
     environment:
-      groups:
-        - cicd Megic
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.cicdmegic.app
