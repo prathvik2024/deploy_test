@@ -48,82 +48,71 @@ workflows:
         track: $GOOGLE_PLAY_TRACK
         submit_as_draft: true
 
-  ios-release:
-    name: iOS Release Workflow
-    max_build_duration: 60 # in minutes, optional
+  ios-automatic-code-signing:
+    name: CiCd Dyz Test
+    instance_type: mac_mini_m2
+    working_directory: ios/
     environment:
+      groups:
+        - cicd Megic
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.cicdmegic.app
       vars:
-        # Set environment variables required for code signing
-        APP_STORE_CONNECT_PRIVATE_KEY: Encrypted(MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgjsSdT8aGrf/wxo4obEiTw5c1jxNYrEVcKnnffccd90OgCgYIKoZIzj0DAQehRANCAASzFEb4MQqUw6Fw2jWdterQV+9n2RryyBcvxBaTLPD0Db5ZsKlTNO2QoxjF/ITS1lV15YYfMRGRmvHK0r4VAcOX) # Your encrypted API key
-        APP_STORE_CONNECT_ISSUER_ID:  69a6de82-e81a-47e3-e0535b8c7c11a4d1 # e.g., 00000000-0000-0000-0000-000000000000
-        APP_STORE_CONNECT_KEY_IDENTIFIER: R97TNQCJSB # e.g., ABCD1234
-        FLUTTER_BUILD_MODE: release # Use 'release' mode for the build
-      node: latest
-      xcode: latest # Use the latest Xcode version available
-      flutter: stable # Choose the Flutter channel
-    triggering:
-      events:
-        - push
+        XCODE_WORKSPACE: "Runner.xcworkspace"
+        XCODE_SCHEME: "Runner"
+        BUNDLE_ID: com.cicdmegic.app
+        APP_STORE_APP_ID: 6692628444
+        APP_STORE_CONNECT_API_KEY: "MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgjsSdT8aGrf/wxo4o
+bEiTw5c1jxNYrEVcKnnffccd90OgCgYIKoZIzj0DAQehRANCAASzFEb4MQqUw6Fw
+2jWdterQV+9n2RryyBcvxBaTLPD0Db5ZsKlTNO2QoxjF/ITS1lV15YYfMRGRmvHK
+0r4VAcOX"
+        xcode: 15.2
+      cocoapods: default
     scripts:
-      - name: Set up Flutter dependencies
+
+      - name: Get Flutter packages
         script: |
+          flutter packages pub get
+      - name: Install pods
+        script: |
+          find . -name "Podfile" -execdir pod install \;
+      - name: Set up keychain to be used for codesigning using Codemagic CLI 'keychain' command
+        script: |
+          keychain initialize
+      - name: Set up code signing settings on Xcode project
+        script: |
+          xcode-project use-profiles
+      - name: Increment build number
+        script: |
+          agvtool new-version -all $(($(app-store-connect get-latest-testflight-build-number "6692628444") + 1))
+      - name: Clean build folder
+        script: |
+          flutter clean
+          rm -rf ios/Pods
+          rm -rf ios/Podfile.lock
           flutter pub get
-      - name: Build iOS release
+          pod install --repo-update
+      - name: Flutter build ipa
         script: |
-          flutter build ios --release --no-codesign
+          flutter build ipa --release \
+            --build-name=1.0.0 \
+            --build-number=$(($(app-store-connect get-latest-testflight-build-number "6692628444") + 1)) \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_testflight: true
+        submit_to_app_store: false
+      email:
+        recipients:
+          - iostest680@gmail.com
+        notify:
+          success: true
+          failure: true
 
-      - name: Prepare for App Store submission
-        script: |
-          # Create the keychain to store your certificates
-          security create-keychain -p "" build.keychain
-          # Make the keychain default, so xcode will use it for signing
-          security default-keychain -s build.keychain
-          # Unlock the keychain
-          security unlock-keychain -p "" build.keychain
-          # Set keychain locking timeout to 1 hour
-          security set-keychain-settings -lut 3600 build.keychain
-          
-          # Download and decrypt provisioning profiles
-          curl -sSL $PROVISIONING_PROFILE_URL --output profile.mobileprovision
-          
-          # Copy the profile to the Profiles directory
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
-          
-          # Decode the provisioning profile to extract the UUID
-          UUID=$(security cms -D -i profile.mobileprovision | plutil -extract UUID xml1 -o - - | grep -oE '[A-Z0-9-]{36}')
-          echo "Provisioning Profile UUID: $UUID"
-
-      - name: Code signing
-        script: |
-          # List available signing identities
-          security find-identity -p codesigning -v
-          
-          # Run xcode build with codesigning
-          xcodebuild -workspace ios/Runner.xcworkspace \
-              -scheme Runner \
-              -sdk iphoneos \
-              -configuration Release \
-              archive \
-              -archivePath $HOME/build/Runner.xcarchive \
-              PROVISIONING_PROFILE_SPECIFIER=$UUID \
-              CODE_SIGN_IDENTITY="Apple Distribution" \
-              DEVELOPMENT_TEAM=$DEVELOPMENT_TEAM
-          
-          # Export the archive
-          xcodebuild -exportArchive \
-              -archivePath $HOME/build/Runner.xcarchive \
-              -exportOptionsPlist ios/Runner/ExportOptions.plist \
-              -exportPath $HOME/build
-
-      - name: Upload to App Store Connect
-        script: |
-          # Using the Application Loader tool for upload
-          xcrun altool --upload-app \
-            -f $HOME/build/Runner.ipa \
-            -t ios \
-            -u "$APP_STORE_CONNECT_APPLE_ID" \
-            -p "@env:APP_STORE_CONNECT_PRIVATE_KEY"
-
-  artifacts:
-    - build/Runner.ipa
