@@ -122,7 +122,6 @@ workflows:
 
           # Reinstall Flutter dependencies and iOS pods
           flutter pub get
-          pod install --repo-update
       - name: Flutter build ipa
         script: |
           flutter build ipa --release \
