@@ -104,24 +104,11 @@ workflows:
           cd -
       - name: Clean build folder
         script: |
-          # Ensure we are in the root of the Flutter project
-          echo "Current directory: $(pwd)"
-          echo "Listing root directory contents:"
-          ls -la
-
-          # Navigate to the iOS directory
-          cd ios
-
-          # Print current directory and list files to ensure correct navigation
-          echo "Current directory after navigating to ios/: $(pwd)"
-          echo "Listing ios/ directory contents:"
-          ls -la
-
-          # Clean previous build artifacts
-          flutter clean
-
-          # Reinstall Flutter dependencies and iOS pods
-          flutter pub get
+            flutter clean
+            rm -rf ios/Pods
+            rm -rf ios/Podfile.lock
+            flutter pub get
+            pod install --repo-update
       - name: Flutter build ipa
         script: |
           flutter build ipa --release \
