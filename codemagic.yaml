@@ -65,9 +65,17 @@ workflows:
         APP_STORE_APP_ID: 6692628444
         APP_STORE_CONNECT_API_KEY: "DyshezMobile/AuthKey_R97TNQCJSB.p8"
         xcode: 15.2
+        FLUTTER_VERSION: "3.24.3"
       cocoapods: default
     scripts:
-
+      - name: Install Flutter
+        script: |
+          git clone https://github.com/flutter/flutter.git
+          cd flutter
+          git checkout $FLUTTER_VERSION  # Use specified version
+          export PATH="$PATH:$(pwd)/bin"
+          flutter channel stable
+          flutter upgrade
       - name: Get Flutter packages
         script: |
           flutter packages pub get
