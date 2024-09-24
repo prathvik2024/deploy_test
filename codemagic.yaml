@@ -53,6 +53,8 @@ workflows:
     instance_type: mac_mini_m2
     working_directory: ios/
     environment:
+      groups:
+        - cicd Megic
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.cicdmegic.app
@@ -61,10 +63,7 @@ workflows:
         XCODE_SCHEME: "Runner"
         BUNDLE_ID: com.cicdmegic.app
         APP_STORE_APP_ID: 6692628444
-        APP_STORE_CONNECT_API_KEY: "MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgjsSdT8aGrf/wxo4o
-bEiTw5c1jxNYrEVcKnnffccd90OgCgYIKoZIzj0DAQehRANCAASzFEb4MQqUw6Fw
-2jWdterQV+9n2RryyBcvxBaTLPD0Db5ZsKlTNO2QoxjF/ITS1lV15YYfMRGRmvHK
-0r4VAcOX"
+        APP_STORE_CONNECT_API_KEY: "DyshezMobile/AuthKey_R97TNQCJSB.p8"
         xcode: 15.2
       cocoapods: default
     scripts:
