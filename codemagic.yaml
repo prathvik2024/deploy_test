@@ -62,8 +62,8 @@ workflows:
         XCODE_WORKSPACE: "Runner.xcworkspace"
         XCODE_SCHEME: "Runner"
         BUNDLE_ID: "com.cicdmegic.app"
-      xcode: 15.2
-      cocoapods: default
+        xcode: 15.2
+        cocoapods: default
       flutter: stable
 
     scripts:
@@ -81,8 +81,17 @@ workflows:
           xcode-project use-profiles
       - name: Increment build number
         script: |
-          # Fetch the latest build number from App Store Connect
-          latest_build_number=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
+          # Navigate to the iOS directory where the Xcode project is located
+          cd ios
+
+          # Fetch the latest build number from App Store Connect (only the build number, not the version)
+          latest_build_number=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" | tr -d '[:space:]' || echo "0")
+
+          # If the latest_build_number is empty or not a number, set it to 0
+          if ! [[ "$latest_build_number" =~ ^[0-9]+$ ]]; then
+            echo "Failed to fetch the latest build number, setting it to 0."
+            latest_build_number=0
+          fi
 
           # Increment the build number by 1
           new_build_number=$((latest_build_number + 1))
@@ -90,6 +99,9 @@ workflows:
 
           # Update the build number using agvtool
           agvtool new-version -all "$new_build_number"
+
+          # Go back to the root directory for the next steps
+          cd -
       - name: Clean build folder
         script: |
           flutter clean
@@ -103,6 +115,8 @@ workflows:
             --build-name=1.0.0 \
             --build-number="$new_build_number" \
             --export-options-plist=/Users/builder/export_options.plist
+
+
 
     artifacts:
       - build/ios/ipa/*.ipa
@@ -118,8 +132,14 @@ workflows:
           failure: true
       app_store_connect:
         auth: integration
+
+        # Configuration related to TestFlight (optional)
+        # Note: This action is performed during post-processing.
         submit_to_testflight: true
-        beta_groups:
+        beta_groups: # Specify the names of beta tester groups that will get access to the build once it has passed beta review.
           - group name 1
           - group name 2
+
+        # Configuration related to App Store (optional)
+        # Note: This action is performed during post-processing.
         submit_to_app_store: false
