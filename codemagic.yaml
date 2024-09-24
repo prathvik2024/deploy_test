@@ -59,6 +59,11 @@ workflows:
         bundle_identifier: com.cicdmegic.app
       vars:
         APP_STORE_APPLE_ID: 6692628444
+        XCODE_WORKSPACE: "Runner.xcworkspace"
+        XCODE_SCHEME: "Runner"
+        BUNDLE_ID: "com.cicdmegic.app"
+        xcode: 15.2
+        cocoapods: default
       flutter: stable
     scripts:
       - name: Set up code signing settings on Xcode project
@@ -73,16 +78,21 @@ workflows:
       - name: Flutter analyze
         script: |
           flutter analyze
-      - name: Flutter unit tests
+      - name: Clean build folder
         script: |
-          flutter test
-        ignore_failure: true
+            flutter clean
+            rm -rf ios/Pods
+            rm -rf ios/Podfile.lock
+            flutter pub get
+            pod install --repo-update
+
       - name: Flutter build ipa
         script: |
-          flutter build ipa --release \
+            flutter build ipa --release \
             --build-name=1.0.0 \
-            --build-number=$(($(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID") + 1)) \
-            --export-options-plist=/Users/builder/export_options.plist
+            --build-number=$(($(app-store-connect get-latest-testflight-build-number "6692628444") + 1)) \
+            --export-options-plist=/Users/builder/export_options.plist    
+
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
