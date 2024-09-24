@@ -120,16 +120,6 @@ workflows:
           # Clean previous build artifacts
           flutter clean
 
-          # Remove existing Pods and Podfile.lock to ensure a clean state
-#          rm -rf Pods
-#          rm -rf Podfile.lock
-
-          # Check if Podfile exists before running pod install
-#          if [ ! -f "Podfile" ]; then
-#            echo "Error: No 'Podfile' found in the project directory."
-#            exit 1
-#          fi
-
           # Reinstall Flutter dependencies and iOS pods
           flutter pub get
           pod install --repo-update
