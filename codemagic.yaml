@@ -104,6 +104,13 @@ workflows:
             --build-name=1.0.0 \
             --build-number=$(($(app-store-connect get-latest-testflight-build-number "6692628444") + 1)) \
             --export-options-plist=/Users/builder/export_options.plist
+          - &log_output_directories_just_in_case
+                      name: Log Output directories
+                      script: |
+                        echo "$CM_BUILD_DIR"
+                        ls $CM_BUILD_DIR 
+                        echo "search for ipa"
+                        find "$CM_BUILD_DIR" -type f -name "*.ipa"
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
