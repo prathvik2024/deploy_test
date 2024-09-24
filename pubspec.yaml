@@ -88,3 +88,29 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+#    scripts:
+#      - name: Set up code signing settings on Xcode project
+#        script: |
+#          xcode-project use-profiles
+#      - name: Get Flutter packages
+#        script: |
+#          flutter packages pub get
+#      - name: Install pods
+#        script: |
+#          find . -name "Podfile" -execdir pod install \;
+#      - name: Flutter analyze
+#        script: |
+#          flutter analyze
+#      - name: Clean build folder
+#        script: |
+#          flutter clean
+#          rm -rf ios/Pods
+#          flutter pub get
+#          pod install --repo-update
+#
+#      - name: Flutter build ipa
+#        script: |
+#          flutter build ipa --release \
+#          --build-name=1.0.0 \
+#          --build-number=$(($(app-store-connect get-latest-testflight-build-number "6692628444") + 1)) \
+#          --export-options-plist=/Users/builder/export_options.plist
