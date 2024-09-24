@@ -82,7 +82,6 @@ workflows:
         script: |
             flutter clean
             rm -rf ios/Pods
-            rm -rf ios/Podfile.lock
             flutter pub get
             pod install --repo-update
 
